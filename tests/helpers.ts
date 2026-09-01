@@ -51,17 +51,16 @@ export function makeR2(): R2Bucket {
 }
 
 /**
- * A minimally configured Env: an API key and storage, but no Cloudflare API
- * credentials, no browser binding and no AI. That's the baseline "just
+ * A minimally configured Env: an API key and KV, but no Cloudflare API
+ * credentials, R2 storage, browser binding or AI. That's the baseline "just
  * deployed it" state, and several tests depend on the Worker still working
- * there.
+ * there without enabling a paid subscription.
  */
 export function baseEnv(overrides: Partial<Env> = {}): Env {
   return {
     API_KEYS: "valid-key",
     CACHE: makeKv(),
     RATE_LIMIT: makeKv(),
-    STORAGE: makeR2(),
     ...overrides,
   };
 }

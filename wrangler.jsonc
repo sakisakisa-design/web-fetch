@@ -5,17 +5,16 @@
   "compatibility_date": "2026-08-01",
   "compatibility_flags": ["nodejs_compat"],
 
-  // Resource IDs are deliberately omitted. Wrangler (>= 4.45) and the
-  // Cloudflare GitHub integration both create these on first deploy and bind
-  // them automatically, so a fresh clone deploys without editing this file.
+  // Wrangler (>= 4.45) and the Cloudflare GitHub integration create these KV
+  // namespaces on first deploy, so a fresh clone deploys without editing IDs.
   "kv_namespaces": [
     { "binding": "CACHE" },
     { "binding": "RATE_LIMIT" }
   ],
 
-  "r2_buckets": [
-    { "binding": "STORAGE", "bucket_name": "web-fetch-storage" }
-  ],
+  // R2 is deliberately not enabled by default because activating it may ask
+  // for a payment method. Core web_fetch works without R2. To add persistent
+  // binary/crawl caching later, create a bucket and bind it as STORAGE.
 
   // Headless Chrome. Needed for browser interaction and paper-size PDFs;
   // plain fetching and the REST endpoints work without it.

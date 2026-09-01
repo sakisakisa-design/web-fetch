@@ -16,7 +16,7 @@ This path does **not** require Node.js, npm, or Wrangler on your computer.
 4. Click **Connect GitHub** if this is your first time, authorize Cloudflare, and select your fork.
 5. Keep the default build settings and click **Deploy**.
 
-The first build creates the KV, R2, Browser, and Workers AI bindings needed by the project. You do not need to enter resource IDs. Future pushes to your fork's `main` branch redeploy automatically.
+The first build creates the KV bindings without requiring resource IDs. The default configuration deliberately does **not** enable R2, so deployment does not require an R2 subscription or payment method. Core `web_fetch`, screenshots, PDFs, and crawls still run; binary responses and completed crawls are simply not persisted. Browser and Workers AI bindings work when those capabilities are available on the Cloudflare account. Future pushes to your fork's `main` branch redeploy automatically.
 
 Cloudflare will give you a URL like:
 
@@ -94,7 +94,7 @@ Open this public endpoint in a browser:
 https://<your-worker>.workers.dev/health
 ```
 
-It reports the active capabilities, compression backend, model, and missing configuration.
+It reports the active capabilities, optional R2 storage, compression backend, model, and missing configuration.
 
 ## Connect an MCP client
 
@@ -140,6 +140,7 @@ Tools unavailable to the deployment are hidden from MCP discovery. Set `MCP_TOOL
 ## Troubleshooting
 
 - If `/health` says `API_KEYS` is missing, check the spelling, make sure it is a Secret, save it, and wait for redeployment.
+- `r2_storage: false` is the normal default and means persistent binary/crawl caching is off; core fetching still works without an R2 subscription.
 - If browser tools are missing, check the Browser binding and `CF_API_TOKEN`.
 - If Gateway compression is disabled, check `AI_GATEWAY_ID`, `AI_MODEL`, `AI_API_STYLE`, and `CF_API_TOKEN`. For `gpt-5.6-luna`, use `responses`.
 - A `429` means the rate limit was reached; each API key allows up to 60 requests per minute by default.

@@ -63,14 +63,14 @@ function makeR2(): R2Bucket {
   } as unknown as R2Bucket;
 }
 
-function buildEnv(): Env {
+function buildEnv(options: { storage?: boolean } = { storage: true }): Env {
   return {
     CF_ACCOUNT_ID: "test-account",
     CF_API_TOKEN: "test-token",
     API_KEYS: "valid-key",
     CACHE: makeKv(),
     RATE_LIMIT: makeKv(),
-    STORAGE: makeR2(),
+    ...(options.storage ? { STORAGE: makeR2() } : {}),
   };
 }
 
@@ -241,6 +241,22 @@ describe("POST /screenshot", () => {
     expect(res.headers.get("X-Cache")).toBe("MISS");
   });
 
+  it("works without R2 and skips persistent binary caching", async () => {
+    const env = buildEnv({ storage: false });
+    const pngData = new Uint8Array([137, 80, 78, 71]).buffer;
+    mockCfBinary(pngData, "image/png");
+    mockCfBinary(pngData, "image/png");
+
+    const first = await postJson("/screenshot", { url: "https://example.com" }, env);
+    const second = await postJson("/screenshot", { url: "https://example.com" }, env);
+
+    expect(first.status).toBe(200);
+    expect(second.status).toBe(200);
+    expect(first.headers.get("X-Cache")).toBe("MISS");
+    expect(second.headers.get("X-Cache")).toBe("MISS");
+    expect(cfApiCalls()).toHaveLength(2);
+  });
+
   it("returns 400 if url missing", async () => {
     const env = buildEnv();
     const res = await postJson("/screenshot", {}, env);
@@ -260,6 +276,15 @@ describe("POST /pdf", () => {
     const res = await postJson("/pdf", { url: "https://example.com" }, env);
     expect(res.status).toBe(200);
     expect(res.headers.get("Content-Type")).toContain("application/pdf");
+  });
+
+  it("works without R2", async () => {
+    const env = buildEnv({ storage: false });
+    const pdfData = new TextEncoder().encode("%PDF-1.4").buffer;
+    mockCfBinary(pdfData, "application/pdf");
+    const res = await postJson("/pdf", { url: "https://example.com" }, env);
+    expect(res.status).toBe(200);
+    expect(res.headers.get("X-Cache")).toBe("MISS");
   });
 });
 
@@ -381,6 +406,37 @@ describe("GET /crawl/:id", () => {
     const body = await res.json<{ status: string }>();
     expect(body.status).toBe("running");
     expect(res.headers.get("X-Cache")).toBe("MISS");
+  });
+
+  it("polls completed crawls without R2 instead of failing on persistence", async () => {
+    const env = buildEnv({ storage: false });
+    fetchMock.mockResolvedValueOnce(
+      new Response(JSON.stringify({ status: "complete", pages: [] }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      })
+    );
+    const res = await app.fetch(
+      new Request("http://localhost/crawl/c3d4e5f6-a7b8-9012-cdef-123456789012", {
+        headers: { Authorization: "Bearer valid-key" },
+      }),
+      env
+    );
+    expect(res.status).toBe(200);
+    expect(res.headers.get("X-Cache")).toBe("MISS");
+    expect((await res.json<{ status: string }>()).status).toBe("complete");
+  });
+
+  it("deletes a crawl cache entry without R2", async () => {
+    const env = buildEnv({ storage: false });
+    const res = await app.fetch(
+      new Request("http://localhost/crawl/d4e5f6a7-b8c9-0123-defa-234567890123", {
+        method: "DELETE",
+        headers: { Authorization: "Bearer valid-key" },
+      }),
+      env
+    );
+    expect(res.status).toBe(204);
   });
 
   it("serves completed crawl from R2 on second poll", async () => {

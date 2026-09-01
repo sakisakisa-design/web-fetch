@@ -28,7 +28,8 @@ export async function getCached(
     };
   }
 
-  // R2
+  // R2 is optional. Without it, binary caching degrades to a cache miss.
+  if (!c.env.STORAGE) return { hit: false };
   const obj = await c.env.STORAGE.get(cacheKey);
   if (obj === null) return { hit: false };
   const buffer = await obj.arrayBuffer();
@@ -64,7 +65,8 @@ export async function setCached(
     return;
   }
 
-  // R2
+  // R2 is optional. Rendering must still succeed when binary caching is off.
+  if (!c.env.STORAGE) return;
   await c.env.STORAGE.put(cacheKey, data as ArrayBuffer, {
     httpMetadata: { contentType },
     customMetadata: { cached_at: String(Date.now()), ttl: String(ttlSeconds) },

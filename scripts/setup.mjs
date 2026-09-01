@@ -2,7 +2,7 @@
 /**
  * One-command setup.
  *
- * Deploys the Worker, provisions KV and R2, generates an API key, and
+ * Deploys the Worker without R2, provisions KV, generates an API key, and
  * optionally stores one Cloudflare API token. Account ID is detected from
  * that token — you never type it. There is no provider (OpenAI) key.
  *
@@ -160,7 +160,7 @@ async function main() {
   const whoamiJson = capture("npx", ["--yes", "wrangler@4", "whoami", "--json"]);
   const whoamiAccounts = parseWhoamiAccounts(whoamiJson);
 
-  info("Deploying the Worker (this also creates KV and R2). Takes about 30s…");
+  info("Deploying the Worker without R2 (this also creates KV). Takes about 30s…");
   const deploy = spawnSync("npx", ["--yes", "wrangler@4", "deploy"], {
     stdio: ["ignore", "pipe", "pipe"],
     shell: isWindows,

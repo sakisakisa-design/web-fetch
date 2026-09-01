@@ -8,7 +8,6 @@ const env: Env = {
   API_KEYS: "test-key",
   CACHE: {} as KVNamespace,
   RATE_LIMIT: {} as KVNamespace,
-  STORAGE: {} as R2Bucket,
 };
 
 describe("GET /health", () => {
@@ -18,6 +17,21 @@ describe("GET /health", () => {
     const body = await res.json<{ status: string; version: string }>();
     expect(body.status).toBe("ok");
     expect(body.version).toBe("3.1.0");
+  });
+
+  it("reports that persistent binary caching is disabled without R2", async () => {
+    const res = await app.fetch(new Request("http://localhost/health"), env);
+    const body = await res.json<{ capabilities: { r2_storage: boolean } }>();
+    expect(body.capabilities.r2_storage).toBe(false);
+  });
+
+  it("reports R2 when the optional binding is present", async () => {
+    const res = await app.fetch(new Request("http://localhost/health"), {
+      ...env,
+      STORAGE: {} as R2Bucket,
+    });
+    const body = await res.json<{ capabilities: { r2_storage: boolean } }>();
+    expect(body.capabilities.r2_storage).toBe(true);
   });
 
   it("does not require Authorization", async () => {

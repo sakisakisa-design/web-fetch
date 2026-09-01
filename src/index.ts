@@ -79,6 +79,8 @@ app.get("/health", (c) => {
       rest_api: hasRestCredentials(c.env),
       /** Puppeteer interaction + paper-size PDFs. */
       browser_binding: Boolean(c.env.BROWSER),
+      /** Optional persistent caching for binary responses and completed crawls. */
+      r2_storage: Boolean(c.env.STORAGE),
       compression:
         aiBackend.kind === "none"
           ? { enabled: false, reason: aiBackend.reason }

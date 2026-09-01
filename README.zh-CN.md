@@ -22,7 +22,7 @@
 6. 选择你刚刚 Fork 的 `web-fetch` 仓库。
 7. 保持默认构建设置，点击 **Deploy**。
 
-第一次构建会自动创建项目需要的 KV、R2、Browser 和 Workers AI 绑定，不需要自己填写资源 ID。部署成功后，Cloudflare 会给你一个地址，例如：
+第一次构建会创建项目需要的 KV 绑定，不需要自己填写资源 ID。默认配置**不会启用 R2**，因此不需要开通 R2 订阅或绑定银行卡；普通 `web_fetch`、截图、PDF 和 crawl 仍可运行，只是二进制结果与已完成 crawl 不会持久缓存。Browser 和 Workers AI 绑定按 Cloudflare 账号可用能力生效。部署成功后，Cloudflare 会给你一个地址，例如：
 
 ```text
 https://web-fetch.你的子域.workers.dev
@@ -136,6 +136,7 @@ https://你的-worker.workers.dev/health
 
 - Worker 是否正常；
 - 哪些功能已经开启；
+- R2 持久缓存是否开启；
 - AI 压缩使用哪个模型；
 - 哪些配置还缺少。
 
@@ -193,6 +194,10 @@ curl -X POST https://你的-worker.workers.dev/fetch \
 ### 为什么普通网页能读，截图却不能用？
 
 普通读取走的是快速 HTTP 路径，不需要额外凭据。截图、PDF、爬虫和结构化抽取属于高级功能，需要 Browser 绑定或 Cloudflare API token。
+
+### 不开通 R2 能用吗？
+
+可以。默认部署不再声明 R2 binding，也不会要求开通 R2 订阅或绑定付款方式。核心网页读取不依赖 R2；截图、PDF 和 crawl 在其他能力已配置时也能运行，但不会把二进制结果或已完成 crawl 持久缓存。`/health` 中的 `r2_storage: false` 表示这种正常的无 R2 模式。
 
 ### `/health` 显示 API_KEYS 未配置怎么办？
 
